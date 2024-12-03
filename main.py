@@ -10,14 +10,14 @@ import emoji
 
 class BilingualCurrentAffairsScraper:
     def __init__(self, 
-                 mongo_uri='MONGO_URI', 
+                 mongo_uri=os.getenv('MONGO_URI'), 
                  db_name='news_scraper'):
         self.client = MongoClient(mongo_uri)
         self.db = self.client[db_name]
         self.urls_collection = self.db['scraped_urls']
         
         # Telegram Bot Configuration
-        self.bot_token = 'BOT_TOKEN'
+        self.bot_token = os.getenv('BOT_TOKEN')
         self.channel_username = '@gujtest'
 
     def get_article_urls(self, page_url):
