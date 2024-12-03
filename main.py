@@ -18,7 +18,7 @@ class BilingualCurrentAffairsScraper:
         
         # Telegram Bot Configuration
         self.bot_token = 'BOT_TOKEN'
-        self.channel_username = '@Currentadda'
+        self.channel_username = '@gujtest'
 
     def get_article_urls(self, page_url):
         try:
