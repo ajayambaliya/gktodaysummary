@@ -1,5 +1,4 @@
 name: Daily Current Affairs Scraper
-
 on:
   schedule:
     # 8:15 AM IST is 2:45 AM UTC (previous day)
@@ -23,15 +22,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-   - name: Check Environment Variables
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: |
-          echo "Bot Token length: ${#BOT_TOKEN}"
-          echo "Mongo URI length: ${#MONGO_URI}"
+    - name: Check Environment Variables
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: |
+        echo "Bot Token length: ${#BOT_TOKEN}"
+        echo "Mongo URI length: ${#MONGO_URI}"
+    
     - name: Run Scraper
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        MONGO_URI: ${{ secrets.MONGO_URI }}
       run: python main.py
