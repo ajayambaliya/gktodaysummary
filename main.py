@@ -19,6 +19,7 @@ class BilingualCurrentAffairsScraper:
         # Telegram Bot Configuration
         self.bot_token = os.getenv('BOT_TOKEN')
         self.channel_username = '@gujtest'
+        print(f"Bot Token: {bool(self.bot_token)}")  # This will print True if token is set, False if None
 
     def get_article_urls(self, page_url):
         try:
