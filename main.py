@@ -174,7 +174,7 @@ class BilingualCurrentAffairsScraper:
             
             # Add header with date
             current_date = datetime.now().strftime('%d-%b-%Y')
-            header = (f"🗓️ <b>Bilingual Current Affairs - {current_date}</b>\n"
+            header = (f"🗓️ <b>Current Affairs - {current_date}</b>\n"
                       f"📊 <i>Total New Articles: {len(orig_titles)}</i>\n\n")
             
             # Get channel promotional message
