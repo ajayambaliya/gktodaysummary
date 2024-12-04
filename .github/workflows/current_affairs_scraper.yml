@@ -31,6 +31,6 @@ jobs:
     
     - name: Run Scraper
       env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: python main.py
