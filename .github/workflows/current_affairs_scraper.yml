@@ -1,4 +1,4 @@
-name: Daily Current Affairs Scraper
+name: Daily Current Scraper
 on:
   schedule:
     # 8:15 AM IST is 2:45 AM UTC (previous day)
@@ -29,9 +29,20 @@ jobs:
       run: |
         echo "Bot Token length: ${#BOT_TOKEN}"
         echo "Mongo URI length: ${#MONGO_URI}"
-        # Debug print to confirm the values are set (ensure you're not revealing sensitive data)
-        echo "BOT_TOKEN: $BOT_TOKEN"  # This will print the actual token in logs (avoid printing in production)
-        echo "MONGO_URI: $MONGO_URI"  # This will print the Mongo URI in logs (avoid printing in production)
+        
+        # Debugging - ensure BOT_TOKEN is available (NOTE: Do NOT print the actual token in production logs)
+        if [ -z "$BOT_TOKEN" ]; then
+          echo "BOT_TOKEN is not set!"
+        else
+          echo "BOT_TOKEN is set correctly."
+        fi
+        
+        # Debugging - Check if MONGO_URI is available
+        if [ -z "$MONGO_URI" ]; then
+          echo "MONGO_URI is not set!"
+        else
+          echo "MONGO_URI is set correctly."
+        fi
 
     - name: Run Scraper
       env:
@@ -39,6 +50,8 @@ jobs:
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: |
         # Debug: Ensure BOT_TOKEN and MONGO_URI are passed correctly
-        echo "BOT_TOKEN: $BOT_TOKEN"  # Print token for verification (ensure this is not printed in production)
-        echo "MONGO_URI: $MONGO_URI"  # Print Mongo URI for verification (ensure this is not printed in production)
+        echo "BOT_TOKEN: $BOT_TOKEN"  # Debugging (avoid in production)
+        echo "MONGO_URI: $MONGO_URI"  # Debugging (avoid in production)
+        
+        # Run the scraper script
         python main.py
