@@ -29,9 +29,16 @@ jobs:
       run: |
         echo "Bot Token length: ${#BOT_TOKEN}"
         echo "Mongo URI length: ${#MONGO_URI}"
-    
+        # Debug print to confirm the values are set (ensure you're not revealing sensitive data)
+        echo "BOT_TOKEN: $BOT_TOKEN"  # This will print the actual token in logs (avoid printing in production)
+        echo "MONGO_URI: $MONGO_URI"  # This will print the Mongo URI in logs (avoid printing in production)
+
     - name: Run Scraper
       env:
         BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python main.py
+      run: |
+        # Debug: Ensure BOT_TOKEN and MONGO_URI are passed correctly
+        echo "BOT_TOKEN: $BOT_TOKEN"  # Print token for verification (ensure this is not printed in production)
+        echo "MONGO_URI: $MONGO_URI"  # Print Mongo URI for verification (ensure this is not printed in production)
+        python main.py
