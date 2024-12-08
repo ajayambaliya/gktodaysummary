@@ -8,6 +8,53 @@ from datetime import datetime
 from deep_translator import GoogleTranslator
 import emoji
 
+
+class FacebookPageManager:
+    def __init__(self, app_id, app_secret, user_access_token, page_id):
+        self.app_id = app_id
+        self.app_secret = app_secret
+        self.user_access_token = user_access_token
+        self.page_id = page_id
+        self.graph_version = 'v21.0'
+        self.base_url = f'https://graph.facebook.com/{self.graph_version}'
+
+    def generate_long_lived_token(self):
+        url = f'{self.base_url}/oauth/access_token'
+        params = {
+            'grant_type': 'fb_exchange_token',
+            'client_id': self.app_id,
+            'client_secret': self.app_secret,
+            'fb_exchange_token': self.user_access_token
+        }
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json().get('access_token')
+
+    def get_page_access_token(self):
+        url = f'{self.base_url}/me/accounts'
+        params = {
+            'access_token': self.user_access_token,
+            'fields': 'id,name,access_token'
+        }
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        accounts = response.json().get('data', [])
+        for account in accounts:
+            if account['id'] == self.page_id:
+                return account['access_token']
+        return None
+
+    def post_to_page(self, page_access_token, message):
+        url = f'{self.base_url}/{self.page_id}/feed'
+        payload = {
+            'message': message,
+            'access_token': page_access_token
+        }
+        response = requests.post(url, data=payload)
+        response.raise_for_status()
+        return response.json().get('id')
+
+
 class BilingualCurrentAffairsScraper:
     def __init__(self, 
                  mongo_uri=os.getenv('MONGO_URI'), 
@@ -20,6 +67,27 @@ class BilingualCurrentAffairsScraper:
         self.bot_token = os.getenv('BOT_TOKEN')
         self.channel_username = '@currentadda'
         print(f"Bot Token: {bool(self.bot_token)}")  # This will print True if token is set, False if None
+        
+        # Facebook Page Manager Configuration
+        self.fb_manager = FacebookPageManager(
+            app_id=os.getenv('APP_ID'),
+            app_secret=os.getenv('APP_SECRET'),
+            user_access_token=os.getenv('ACESS_TOKEN'),
+            page_id=os.getenv('PAGE_ID')
+        )
+        self.fb_page_access_token = self.fb_manager.get_page_access_token()
+
+    def get_channel_promo_message(self):
+        """
+        Generate a promotional message for Facebook and Telegram channels.
+        """
+        return (
+            "🚀 Daily Current Affairs નો ખજાનો એટલે CurrentAdda 🌐\n\n"
+            "🇬🇧 English & 🇮🇳 Gujarati Content\n"
+            "Join us for the latest news:\n"
+            "👉 Facebook: https://www.facebook.com/currentaddaa\n"
+            "👉 Telegram: https://telegram.me/currentadda"
+        )
 
     def get_article_urls(self, page_url):
         try:
@@ -89,24 +157,48 @@ class BilingualCurrentAffairsScraper:
         return (original_titles, original_paragraphs, 
                 gujarati_titles, gujarati_paragraphs)
 
-    def format_bilingual_message(self, orig_titles, orig_paragraphs, guj_titles, guj_paragraphs):
+    def format_bilingual_message(self, orig_titles, orig_paragraphs, guj_titles, guj_paragraphs, is_facebook=False):
         messages = []
         emoji_list = ['📰', '🌍', '🔍', '📡', '💡', '🌐', '📊', '🗞️', '📝', '🚀']
         
         for orig_title, orig_para, guj_title, guj_para in zip(
             orig_titles, orig_paragraphs, guj_titles, guj_paragraphs):
             
-            random_emoji = emoji.emojize(f":star: {emoji_list[hash(orig_title) % len(emoji_list)]}")
+            random_emoji = emoji_list[hash(orig_title) % len(emoji_list)]
             
-            message = (
-                f"{random_emoji} <b>English Title:</b> {orig_title}\n"
-                f"<b>🇮🇳 Gujarati Title:</b> {guj_title}\n\n"
-                f"🇬🇧 <i>English Content:</i>\n{orig_para[:400]}...\n\n"
-                f"🇮🇳 <i>Gujarati Content:</i>\n{guj_para[:400]}...\n\n"
-            )
+            if is_facebook:
+                message = (
+                    f"{random_emoji} English Title: {orig_title}\n"
+                    f"Gujarati Title: {guj_title}\n\n"
+                    f"English Content:\n{orig_para[:400]}...\n\n"
+                    f"Gujarati Content:\n{guj_para[:400]}...\n\n"
+                )
+            else:
+                message = (
+                    f"{random_emoji} <b>English Title:</b> {orig_title}\n"
+                    f"<b>🇮🇳 Gujarati Title:</b> {guj_title}\n\n"
+                    f"🇬🇧 <i>English Content:</i>\n{orig_para[:400]}...\n\n"
+                    f"🇮🇳 <i>Gujarati Content:</i>\n{guj_para[:400]}...\n\n"
+                )
             messages.append(message)
         
         return "\n\n".join(messages)
+
+    def post_to_facebook(self, message):
+        """
+        Post a message to the Facebook Page using the Page Access Token.
+        """
+        if not self.fb_page_access_token:
+            print("❌ Facebook Page Access Token is missing.")
+            return False
+
+        print("\n=== Posting to Facebook ===")
+        post_id = self.fb_manager.post_to_page(self.fb_page_access_token, message)
+        if post_id:
+            print(f"🎉 Successfully posted to Facebook with Post ID: {post_id}")
+        else:
+            print("❌ Failed to post to Facebook.")
+        return post_id
 
     def send_to_telegram(self, message):
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -127,13 +219,6 @@ class BilingualCurrentAffairsScraper:
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Telegram send error: {e}")
-
-    def get_channel_promo_message(self):
-        return (
-            "🚀 <b>Daily Current Affairs નો ખજાનો એટલે CurrentAdda</b> 🌐\n\n"
-            "🇬🇧 English & 🇮🇳 Gujarati Content\n"
-            "<i>Join us for the latest news, https://telegram.me/currentadda </i>"
-        )
 
     def main(self):
         base_url = "https://www.gktoday.in/current-affairs/"
@@ -166,25 +251,34 @@ class BilingualCurrentAffairsScraper:
                 print("No articles with featured images found.")
                 return
             
-            # Format bilingual message
-            final_message = self.format_bilingual_message(
+            # Format bilingual messages
+            final_message_telegram = self.format_bilingual_message(
                 orig_titles, orig_paragraphs, 
                 guj_titles, guj_paragraphs
             )
             
+            final_message_facebook = self.format_bilingual_message(
+                orig_titles, orig_paragraphs, 
+                guj_titles, guj_paragraphs,
+                is_facebook=True
+            )
+            
             # Add header with date
             current_date = datetime.now().strftime('%d-%b-%Y')
-            header = (f"🗓️ <b>Current Affairs - {current_date}</b>\n"
-                      f"📊 <i>Total New Articles: {len(orig_titles)}</i>\n\n")
+            header = f"🗓️ Current Affairs - {current_date}\n📊 Total New Articles: {len(orig_titles)}\n\n"
             
             # Get channel promotional message
             promo_message = self.get_channel_promo_message()
             
             # Combine all messages
-            complete_message = header + final_message + "\n\n" + promo_message
+            complete_message_telegram = header + final_message_telegram + "\n\n" + promo_message
+            complete_message_facebook = header + final_message_facebook + "\n\n" + promo_message
             
             # Send to Telegram
-            self.send_to_telegram(complete_message)
+            self.send_to_telegram(complete_message_telegram)
+            
+            # Post to Facebook
+            self.post_to_facebook(complete_message_facebook)
         else:
             print("No new articles found.")
 
