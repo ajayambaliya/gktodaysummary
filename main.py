@@ -65,7 +65,7 @@ class BilingualCurrentAffairsScraper:
         
         # Telegram Bot Configuration
         self.bot_token = os.getenv('BOT_TOKEN')
-        self.channel_username = '@currentadda'
+        self.channel_username = '@Current_gujarati_english'
         print(f"Bot Token: {bool(self.bot_token)}")  # This will print True if token is set, False if None
         
         # Facebook Page Manager Configuration
